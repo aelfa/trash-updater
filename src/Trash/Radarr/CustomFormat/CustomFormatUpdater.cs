@@ -12,15 +12,18 @@ namespace Trash.Radarr.CustomFormat
 {
     internal class CustomFormatUpdater : ICustomFormatUpdater
     {
+        private readonly ICachePersister _cache;
         private readonly IGuideProcessor _guideProcessor;
         private readonly IPersistenceProcessor _persistenceProcessor;
 
         public CustomFormatUpdater(
             ILogger log,
+            ICachePersister cache,
             IGuideProcessor guideProcessor,
             IPersistenceProcessor persistenceProcessor)
         {
             Log = log;
+            _cache = cache;
             _guideProcessor = guideProcessor;
             _persistenceProcessor = persistenceProcessor;
         }
@@ -29,7 +32,9 @@ namespace Trash.Radarr.CustomFormat
 
         public async Task Process(IServiceCommand args, RadarrConfiguration config)
         {
-            await _guideProcessor.BuildGuideData(config.CustomFormats);
+            _cache.Load();
+
+            await _guideProcessor.BuildGuideData(config.CustomFormats, _cache.CfCache);
 
             if (!ValidateGuideDataAndCheckShouldProceed(config))
             {
@@ -51,6 +56,12 @@ namespace Trash.Radarr.CustomFormat
 
             Log.Information("Updated {ProfileCount} profiles and a total of {ScoreCount} scores",
                 _guideProcessor.ProfileScores.Keys.Count, _guideProcessor.ProfileScores.Sum(kvp => kvp.Value.Count));
+
+            // Step 3: Cache all the custom formats (using ID from API response). In addition, re-assign cache entries
+            // in all of the processed CFs. This captures the new cache entries, if any.
+            _cache.Update(_persistenceProcessor.Responses, _guideProcessor.ProcessedCustomFormats);
+
+            _cache.Save();
 
             _persistenceProcessor.Reset();
             _guideProcessor.Reset();

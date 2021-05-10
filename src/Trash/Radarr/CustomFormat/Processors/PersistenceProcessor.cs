@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Trash.Cache;
 using Trash.Config;
 using Trash.Radarr.Api;
 using Trash.Radarr.CustomFormat.Models;
@@ -13,13 +12,11 @@ namespace Trash.Radarr.CustomFormat.Processors
     internal class PersistenceProcessor : IPersistenceProcessor
     {
         private readonly IRadarrApi _api;
-        private readonly IServiceCache _cache;
         private readonly RadarrConfiguration _config;
         private ProcessorContainer? _processors;
 
-        public PersistenceProcessor(IServiceCache cache, IRadarrApi api, IServiceConfiguration config)
+        public PersistenceProcessor(IRadarrApi api, IServiceConfiguration config)
         {
-            _cache = cache;
             _api = api;
             _config = (RadarrConfiguration) config;
             Reset();
@@ -57,10 +54,6 @@ namespace Trash.Radarr.CustomFormat.Processors
             // to existing CFs and creation of brand new ones, depending on what's already available in Radarr.
             await Processors.CustomFormatCustomFormatApiPersister.Process(_api,
                 Processors.JsonTransactionProcessor.ApiTransactions);
-
-            // Step 3: Cache all the custom formats (using ID from API response). In addition, re-assign cache entries
-            // in all of the processed CFs. This captures the new cache entries, if any.
-            Processors.CachePersister.Process(Processors.CustomFormatCustomFormatApiPersister.Responses, guideCfs);
         }
 
         public async Task SetQualityProfileScores(
@@ -72,19 +65,13 @@ namespace Trash.Radarr.CustomFormat.Processors
 
         public void Reset()
         {
-            _processors = new ProcessorContainer(_cache);
+            _processors = new ProcessorContainer();
         }
 
         private class ProcessorContainer
         {
-            public ProcessorContainer(IServiceCache cache)
-            {
-                CachePersister = new CachePersistenceProcessor(cache);
-            }
-
             public JsonTransactionProcessor JsonTransactionProcessor { get; } = new();
             public CustomFormatApiPersistenceProcessor CustomFormatCustomFormatApiPersister { get; } = new();
-            public CachePersistenceProcessor CachePersister { get; }
             public QualityProfileApiPersistenceProcessor ProfileQualityProfileApiPersister { get; } = new();
         }
     }

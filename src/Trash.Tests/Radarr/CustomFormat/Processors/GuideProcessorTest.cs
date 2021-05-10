@@ -4,10 +4,8 @@ using FluentAssertions;
 using Flurl.Http.Testing;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NSubstitute;
 using NUnit.Framework;
 using Serilog;
-using Trash.Cache;
 using Trash.Radarr;
 using Trash.Radarr.CustomFormat.Guide;
 using Trash.Radarr.CustomFormat.Models;
@@ -30,11 +28,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors
                     .CreateLogger();
 
                 Data = new ResourceDataReader(typeof(GuideProcessorTest), "Data");
-                ServiceCache = Substitute.For<IServiceCache>();
             }
 
             public ILogger Logger { get; }
-            public IServiceCache ServiceCache { get; }
             public ResourceDataReader Data { get; }
 
             public string ReadJson(string jsonFile)
@@ -49,7 +45,7 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors
         {
             var ctx = new Context();
             var guideProcessor =
-                new GuideProcessor(ctx.Logger, new CustomFormatGuideParser(ctx.Logger), ctx.ServiceCache);
+                new GuideProcessor(ctx.Logger, new CustomFormatGuideParser(ctx.Logger));
 
             // simulate guide data
             using var testHttp = new HttpTest();
@@ -78,7 +74,7 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors
                 }
             };
 
-            guideProcessor.BuildGuideData(config);
+            guideProcessor.BuildGuideData(config, null);
 
             var expectedProcessedCustomFormatData = new List<ProcessedCustomFormatData>
             {

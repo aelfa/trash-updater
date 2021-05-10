@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
@@ -101,7 +102,18 @@ namespace Trash.Radarr.CustomFormat.Processors.Persistence
         {
             foreach (var guideProp in guideCfJson.Properties().Where(p => p.Value.Type != exceptType))
             {
-                radarrCf[guideProp.Name] = guideProp.Value;
+                if (guideProp.Value.Type == JTokenType.Array &&
+                    radarrCf.TryGetValue(guideProp.Name, out var radarrArray))
+                {
+                    ((JArray) radarrArray).Merge(guideProp.Value, new JsonMergeSettings
+                    {
+                        MergeArrayHandling = MergeArrayHandling.Merge
+                    });
+                }
+                else
+                {
+                    radarrCf[guideProp.Name] = guideProp.Value;
+                }
             }
         }
 

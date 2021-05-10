@@ -33,6 +33,7 @@
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="NSubstitute.Analyzers.CSharp" />
     <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="FluentAssertions.Json" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="AutofacContrib.NSubstitute" />
     <PackageReference Include="GitHubActionsTestLogger" />

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Serilog;
-using Trash.Cache;
 using Trash.Radarr.CustomFormat.Guide;
 using Trash.Radarr.CustomFormat.Models;
 using Trash.Radarr.CustomFormat.Models.Cache;
@@ -12,15 +11,13 @@ namespace Trash.Radarr.CustomFormat.Processors
 {
     internal class GuideProcessor : IGuideProcessor
     {
-        private readonly IServiceCache _cache;
         private readonly ICustomFormatGuideParser _guideParser;
         private IList<CustomFormatData>? _guideData;
         private ProcessorContainer? _processors;
 
-        public GuideProcessor(ILogger log, ICustomFormatGuideParser guideParser, IServiceCache cache)
+        public GuideProcessor(ILogger log, ICustomFormatGuideParser guideParser)
         {
             _guideParser = guideParser;
-            _cache = cache;
             Log = log;
             Reset();
         }
@@ -48,20 +45,13 @@ namespace Trash.Radarr.CustomFormat.Processors
         public IReadOnlyCollection<TrashIdMapping> DeletedCustomFormatsInCache
             => Processors.CustomFormat.DeletedCustomFormatsInCache;
 
-        public async Task BuildGuideData(IReadOnlyList<CustomFormatConfig> config)
+        public async Task BuildGuideData(IReadOnlyList<CustomFormatConfig> config, CustomFormatCache? cache)
         {
             if (_guideData == null)
             {
                 Log.Debug("Requesting and parsing guide markdown");
                 var markdownData = await _guideParser.GetMarkdownData();
                 _guideData = _guideParser.ParseMarkdown(markdownData);
-            }
-
-            // Grab the cache if one is available
-            var cache = _cache.Load<CustomFormatCache>();
-            if (cache == null)
-            {
-                Log.Debug("Custom format cache does not exist; proceeding without it");
             }
 
             // Step 1: Process and filter the custom formats from the guide.

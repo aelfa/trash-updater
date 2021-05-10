@@ -61,6 +61,7 @@ namespace Trash
             builder.RegisterType<CustomFormatGuideParser>().As<ICustomFormatGuideParser>();
             builder.RegisterType<GuideProcessor>().As<IGuideProcessor>();
             builder.RegisterType<PersistenceProcessor>().As<IPersistenceProcessor>();
+            builder.RegisterType<CachePersister>().As<ICachePersister>();
         }
 
         private static void ConfigurationRegistrations(ContainerBuilder builder)

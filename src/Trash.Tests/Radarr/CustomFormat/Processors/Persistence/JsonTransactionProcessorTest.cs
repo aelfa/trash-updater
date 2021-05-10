@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using FluentAssertions;
+using FluentAssertions.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
@@ -132,12 +133,11 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Persistence
         }
 
         [Test]
-        public void Process_Create_CorrectResult()
+        public void Process_CreateUpdateNoChangeNoDelete_CorrectResult()
         {
-            const string radarrCfData = @"
-{
+            const string radarrCfData = @"[{
   'id': 1,
-  'name': 'cf1',
+  'name': 'user_defined',
   'specifications': [{
     'name': 'spec1',
     'negate': false,
@@ -146,43 +146,141 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Persistence
       'value': 'value1'
     }]
   }]
-}";
-            const string guideCfData = @"
-{
-  'name': 'cf2',
+}, {
+  'id': 2,
+  'name': 'updated',
   'specifications': [{
     'name': 'spec2',
+    'negate': false,
+    'fields': [{
+      'name': 'value',
+      'untouchable': 'field',
+      'value': 'value1'
+    }]
+  }]
+}, {
+  'id': 3,
+  'name': 'no_change',
+  'specifications': [{
+    'name': 'spec4',
+    'negate': false,
+    'fields': [{
+      'name': 'value',
+      'value': 'value1'
+    }]
+  }]
+}]";
+            var guideCfData = new[]
+            {
+                @"{
+  'name': 'created',
+  'specifications': [{
+    'name': 'spec5',
     'fields': {
       'value': 'value2'
     }
   }]
-}";
-            var radarrCfs = new List<JObject> {JObject.Parse(radarrCfData)};
+}",
+                @"{
+  'name': 'updated_different_name',
+  'specifications': [{
+    'name': 'spec2',
+    'negate': true,
+    'new_spec_field': 'new_spec_value',
+    'fields': {
+      'value': 'value2',
+      'new_field': 'new_value'
+    }
+  }, {
+    'name': 'new_spec',
+    'fields': {
+      'value': 'value3'
+    }
+  }]
+}",
+                @"{
+  'name': 'no_change',
+  'specifications': [{
+    'name': 'spec4',
+    'negate': false,
+    'fields': {
+      'value': 'value1'
+    }
+  }]
+}"
+            };
 
+            var radarrCfs = JsonConvert.DeserializeObject<List<JObject>>(radarrCfData);
             var guideCfs = new List<ProcessedCustomFormatData>
             {
-                new() {Name = "cf2", Json = guideCfData}
+                new() {Name = "created", Json = guideCfData[0]},
+                new()
+                {
+                    Name = "updated_different_name",
+                    Json = guideCfData[1],
+                    CacheEntry = new TrashIdMapping {CustomFormatId = 2}
+                },
+                new() {Name = "no_change", Json = guideCfData[2]}
             };
 
             var processor = new JsonTransactionProcessor();
             processor.Process(guideCfs, radarrCfs);
 
-            const string expectedJson = @"
-{
-  'name': 'cf2',
+            var expectedJson = new[]
+            {
+                @"{
+  'name': 'created',
   'specifications': [{
-    'name': 'spec2',
+    'name': 'spec5',
     'fields': [{
       'name': 'value',
       'value': 'value2'
     }]
   }]
-}";
+}",
+                @"{
+  'id': 2,
+  'name': 'updated_different_name',
+  'specifications': [{
+    'name': 'spec2',
+    'negate': true,
+    'new_spec_field': 'new_spec_value',
+    'fields': [{
+      'name': 'value',
+      'untouchable': 'field',
+      'value': 'value2',
+      'new_field': 'new_value'
+    }]
+  }, {
+    'name': 'new_spec',
+    'fields': [{
+      'name': 'value',
+      'value': 'value3'
+    }]
+  }]
+}",
+                @"{
+  'id': 3,
+  'name': 'no_change',
+  'specifications': [{
+    'name': 'spec4',
+    'negate': false,
+    'fields': [{
+      'name': 'value',
+      'value': 'value1'
+    }]
+  }]
+}"
+            };
 
             processor.ApiTransactions.Should().BeEquivalentTo(new List<CustomFormatTransaction>
             {
-                new(ApiOperation.Create, JObject.Parse(expectedJson), guideCfs[0])
-            });
+                new(ApiOperation.Create, JObject.Parse(expectedJson[0]), guideCfs[0]),
+                new(ApiOperation.Update, JObject.Parse(expectedJson[1]), guideCfs[1]),
+                new(ApiOperation.NoChange, JObject.Parse(expectedJson[2]), guideCfs[2])
+            }, op => op
+                .Using<JToken>(ctx => ctx.Subject.Should().BeEquivalentTo(ctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
     }
 }
