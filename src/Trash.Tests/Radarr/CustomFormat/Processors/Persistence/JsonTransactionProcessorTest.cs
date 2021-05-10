@@ -48,31 +48,27 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Persistence
         [TestCase(null, "cf1")]
         public void Process_UpdateUsingIdOrName_CorrectResult(int? id, string guideCfName)
         {
-            var radarrCfs = new List<JObject>
-            {
-                JObject.FromObject(new
-                {
-                    id = 1,
-                    name = "cf1",
-                    specifications = new[]
-                    {
-                        new
-                        {
-                            name = "spec1",
-                            implementation = "ReleaseTitleSpec",
-                            fields = new[]
-                            {
-                                new
-                                {
-                                    name = "value",
-                                    value = "value1"
-                                }
-                            }
-                        }
-                    }
-                })
-            };
-
+            const string radarrCfData = @"{
+  'id': 1,
+  'name': 'cf1',
+  'specifications': [{
+    'name': 'spec1',
+    'fields': [{
+      'name': 'value',
+      'value': 'value1'
+    }]
+  }]
+}";
+            const string guideCfData = @"{
+  'name': 'cf1',
+  'specifications': [{
+    'name': 'spec1',
+    'new': 'valuenew',
+    'fields': {
+      'value': 'value2'
+    }
+  }]
+}";
             var cacheEntry = id != null ? new TrashIdMapping {CustomFormatId = id.Value} : null;
 
             var guideCfs = new List<ProcessedCustomFormatData>
@@ -81,55 +77,31 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Persistence
                 {
                     Name = guideCfName,
                     CacheEntry = cacheEntry,
-                    Json = JsonConvert.SerializeObject(new
-                    {
-                        id = 1,
-                        name = "cf1",
-                        specifications = new[]
-                        {
-                            new
-                            {
-                                name = "spec1",
-                                implementation = "ReleaseTitleSpec2",
-                                fields = new
-                                {
-                                    value = "value2"
-                                }
-                            }
-                        }
-                    })
+                    Json = guideCfData
                 }
             };
 
             var processor = new JsonTransactionProcessor();
-            processor.Process(guideCfs, radarrCfs);
+            processor.Process(guideCfs, new[] {JObject.Parse(radarrCfData)});
 
-            var expectedJson = JObject.FromObject(new
-            {
-                id = 1,
-                name = "cf2",
-                specifications = new[]
-                {
-                    new
-                    {
-                        name = "spec1",
-                        implementation = "ReleaseTitleSpec2",
-                        fields = new[]
-                        {
-                            new
-                            {
-                                name = "value",
-                                value = "value2"
-                            }
-                        }
-                    }
-                }
-            });
-
+            const string expectedJsonData = @"{
+  'id': 1,
+  'name': 'cf1',
+  'specifications': [{
+    'name': 'spec1',
+    'new': 'valuenew',
+    'fields': [{
+      'name': 'value',
+      'value': 'value2'
+    }]
+  }]
+}";
             processor.ApiTransactions.Should().BeEquivalentTo(new List<CustomFormatTransaction>
             {
-                new(ApiOperation.Update, expectedJson, guideCfs[0])
-            });
+                new(ApiOperation.Update, JObject.Parse(expectedJsonData), guideCfs[0])
+            }, op => op
+                .Using<JToken>(ctx => ctx.Subject.Should().BeEquivalentTo(ctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
 
         [Test]

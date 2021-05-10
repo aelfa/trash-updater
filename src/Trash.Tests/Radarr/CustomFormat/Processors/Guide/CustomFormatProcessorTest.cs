@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using FluentAssertions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using Trash.Radarr;
 using Trash.Radarr.CustomFormat.Guide;
@@ -80,7 +81,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
                     TrashId = "id1",
                     CacheEntry = testCache.TrashIdMappings[0]
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
 
         [Test]
@@ -120,7 +123,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
                     TrashId = "id1",
                     CacheEntry = null
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
 
         [Test]
@@ -145,7 +150,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
                     Score = 100,
                     TrashId = "id1"
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
 
         [Test]
@@ -177,7 +184,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
                     Score = null,
                     TrashId = "id3"
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
 
         [Test]
@@ -217,7 +226,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
                     Score = null,
                     TrashId = "id3"
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
 
         [Test]

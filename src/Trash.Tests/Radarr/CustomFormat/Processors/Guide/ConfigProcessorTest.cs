@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using FluentAssertions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using Trash.Radarr;
 using Trash.Radarr.CustomFormat.Models;
@@ -58,7 +59,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
                     CustomFormats = testProcessedCfs,
                     QualityProfiles = testConfig[0].QualityProfiles
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
 
         [Test]
@@ -99,7 +102,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
             var processor = new ConfigProcessor();
             processor.Process(testProcessedCfs, testConfig);
 
-            processor.RenamedCustomFormats.Should().BeEquivalentTo(testProcessedCfs);
+            processor.RenamedCustomFormats.Should().BeEquivalentTo(testProcessedCfs, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
             processor.CustomFormatsNotInGuide.Should().BeEmpty();
             processor.ConfigData.Should().BeEquivalentTo(new List<ProcessedConfigData>
             {
@@ -107,7 +112,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
                 {
                     CustomFormats = testProcessedCfs
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
 
         [Test]
@@ -141,7 +148,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
                         new() {Name = "name1"}
                     }
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
 
         [Test]
@@ -165,7 +174,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
             processor.Process(testProcessedCfs, testConfig);
 
             processor.RenamedCustomFormats.Should().BeEmpty();
-            processor.CustomFormatsNotInGuide.Should().BeEquivalentTo(new List<string> {"name3"});
+            processor.CustomFormatsNotInGuide.Should().BeEquivalentTo(new List<string> {"name3"}, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
             processor.ConfigData.Should().BeEquivalentTo(new List<ProcessedConfigData>
             {
                 new()
@@ -175,7 +186,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
                         new() {Name = "name1"}
                     }
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
 
         [Test]
@@ -220,9 +233,11 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors.Guide
             {
                 new()
                 {
-                    CustomFormats = new() { testProcessedCfs[1] }
+                    CustomFormats = new List<ProcessedCustomFormatData>() {testProcessedCfs[1]}
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
         }
     }
 }

@@ -101,7 +101,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors
                 }
             };
 
-            guideProcessor.ProcessedCustomFormats.Should().BeEquivalentTo(expectedProcessedCustomFormatData);
+            guideProcessor.ProcessedCustomFormats.Should().BeEquivalentTo(expectedProcessedCustomFormatData, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
 
             guideProcessor.ConfigData.Should().BeEquivalentTo(new List<ProcessedConfigData>
             {
@@ -115,7 +117,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors
                     CustomFormats = expectedProcessedCustomFormatData.GetRange(2, 1),
                     QualityProfiles = config[1].QualityProfiles
                 }
-            });
+            }, op => op
+                .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                .WhenTypeIs<JToken>());
 
             guideProcessor.CustomFormatsWithoutScore.Should()
                 .Equal(new List<(string name, string trashId, string profileName)>
@@ -160,7 +164,9 @@ namespace Trash.Tests.Radarr.CustomFormat.Processors
                             new(expectedProcessedCustomFormatData[2], 5678)
                         }
                     }
-                });
+                }, op => op
+                    .Using<JToken>(jctx => jctx.Subject.Should().BeEquivalentTo(jctx.Expectation))
+                    .WhenTypeIs<JToken>());
         }
     }
 }
